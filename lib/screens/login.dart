@@ -1,37 +1,72 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 
 /// CONTROLLER
 class Logincontrollers extends GetxController {
   var isPasswordVisible = false.obs;
+  var isLoading = false.obs;
 
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
   }
 
-  bool login(String username, String password, String role) {
+  final String baseUrl = "http://10.0.2.2:3000";
+
+  Future<bool> login(String username, String password) async {
     final trimmedUsername = username.trim();
     final trimmedPassword = password.trim();
 
     if (trimmedUsername.isEmpty || trimmedPassword.isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Please fill in all fields",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
       return false;
     }
 
-    if (role == 'staff' &&
-        trimmedUsername == "staff" &&
-        trimmedPassword == "123456") {
-      return true;
-    }
+    isLoading.value = true;
 
-    if (role == 'client' &&
-        trimmedUsername == "client" &&
-        trimmedPassword == "123456") {
-      return true;
-    }
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/api/login"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "username": trimmedUsername,
+          "password": trimmedPassword,
+          "role": "client", // ✅ always client now
+        }),
+      );
 
-    return false;
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        Get.snackbar(
+          "Error",
+          data['message'] ?? "Invalid credentials",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return false;
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Could not connect to server. Check your network.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
   }
 }
 
@@ -102,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: usernameController,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: "Username",
+                        hintText: "Username / Email",
                         hintStyle: const TextStyle(color: Colors.white70),
                         prefixIcon: const Icon(
                           Icons.person,
@@ -153,62 +188,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 30),
 
-                    /// STAFF LOGIN
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      onPressed: () {
-                        bool success = loginController.login(
-                          usernameController.text,
-                          passwordController.text,
-                          'staff',
-                        );
+                    /// ✅ SINGLE LOGIN BUTTON (CLIENT)
+                    Obx(
+                      () => ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        onPressed: loginController.isLoading.value
+                            ? null
+                            : () async {
+                                bool success = await loginController.login(
+                                  usernameController.text,
+                                  passwordController.text,
+                                );
 
-                        if (success) {
-                          Get.toNamed('/staffhome');
-                        } else {
-                          Get.snackbar(
-                            "Error",
-                            "Invalid staff credentials",
-                            backgroundColor: Colors.red,
-                            colorText: Colors.white,
-                          );
-                        }
-                      },
-                      child: const Text("Login as Staff"),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    /// CLIENT LOGIN
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      onPressed: () {
-                        bool success = loginController.login(
-                          usernameController.text,
-                          passwordController.text,
-                          'client',
-                        );
-
-                        if (success) {
-                          Get.toNamed('/clienthome');
-                        } else {
-                          Get.snackbar(
-                            "Error",
-                            "Invalid client credentials",
-                            backgroundColor: Colors.red,
-                            colorText: Colors.white,
-                          );
-                        }
-                      },
-                      child: const Text(
-                        "Login as Client",
-                        style: TextStyle(color: Colors.black),
+                                if (success) {
+                                  Get.toNamed('/clienthome');
+                                }
+                              },
+                        child: loginController.isLoading.value
+                            ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : const Text("Login"),
                       ),
                     ),
 
@@ -225,9 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: TextStyle(color: Colors.white70),
                             ),
                             GestureDetector(
-                              onTap: () {
-                                Get.toNamed('/signup');
-                              },
+                              onTap: () => Get.toNamed('/signup'),
                               child: const Text(
                                 "Sign up",
                                 style: TextStyle(

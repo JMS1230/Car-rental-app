@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/carscreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Client Dashboard App',
       theme: ThemeData(primarySwatch: Colors.red),
-      home: const ClientDashboardScreen(), // <-- This is now the main screen
+      home: const ClientDashboardScreen(),
     );
   }
 }
@@ -58,6 +59,15 @@ class ClientDashboardScreen extends StatelessWidget {
               title: stat["title"].toString(),
               value: stat["value"].toString(),
               icon: stat["icon"] as IconData,
+              onTap: () {
+                // ✅ NAVIGATION LOGIC
+                if (stat["title"] == "Available Cars") {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CarsScreen()),
+                  );
+                }
+              },
             );
           },
         ),
@@ -70,46 +80,51 @@ class DashboardCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
+  final VoidCallback? onTap;
 
   const DashboardCard({
     super.key,
     required this.title,
     required this.value,
     required this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: const Color(0xFF1C1C1E),
-      elevation: 6,
-      shadowColor: Colors.redAccent.withOpacity(0.4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: Colors.redAccent.withOpacity(0.4)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: Colors.redAccent),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+    return GestureDetector(
+      onTap: onTap, // ✅ MAKES CARD CLICKABLE
+      child: Card(
+        color: const Color(0xFF1C1C1E),
+        elevation: 6,
+        shadowColor: Colors.redAccent.withOpacity(0.4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: Colors.redAccent.withOpacity(0.4)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(fontSize: 15, color: Colors.grey[400]),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: TextStyle(fontSize: 15, color: Colors.grey[400]),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
