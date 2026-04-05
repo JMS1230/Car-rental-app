@@ -1,7 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart'; // ✅ Use GetX for navigation
+import 'package:flutter_application_1/screens/changepasswordscreen.dart';
+import 'package:flutter_application_1/screens/driverlicensescreen.dart';
+import 'package:flutter_application_1/screens/mybookingsscreen.dart';
+import 'package:flutter_application_1/screens/paymenthistoryscreen.dart';
+import 'package:get/get.dart';
 
 class ClientProfileScreen extends StatelessWidget {
   final String clientName = "Bruce Wayne";
@@ -77,36 +81,72 @@ class ClientProfileScreen extends StatelessWidget {
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
-                      // Navigate to client bookings screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MyBookingsScreen(),
+                        ),
+                      );
                     },
                   ),
+
                   Divider(color: Colors.grey[800]),
 
+                  ListTile(
+                    leading: const Icon(Icons.badge, color: Colors.redAccent),
+                    title: const Text(
+                      "Driver Licence",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DriverLicenceScreen(),
+                        ),
+                      );
+                    },
+                  ),
+
+                  Divider(color: Colors.grey[800]),
+
+                  // ✅ NEW PAYMENT CARD
                   ListTile(
                     leading: const Icon(Icons.payment, color: Colors.redAccent),
                     title: const Text(
-                      "Payment History",
+                      "Payment",
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
-                      // Navigate to payment history screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PaymentHistoryScreen(),
+                        ),
+                      );
+                      // Navigate to payment history or payment screen
+                      // Navigator.push(...);
                     },
                   ),
+
                   Divider(color: Colors.grey[800]),
 
                   ListTile(
-                    leading: const Icon(
-                      Icons.support_agent,
-                      color: Colors.redAccent,
-                    ),
+                    leading: const Icon(Icons.lock, color: Colors.redAccent),
                     title: const Text(
-                      "Support",
+                      "Change Password",
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
-                      // Navigate to support screen
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ChangePasswordScreen(),
+                        ),
+                      );
                     },
                   ),
+
                   Divider(color: Colors.grey[800]),
 
                   ListTile(
@@ -116,7 +156,6 @@ class ClientProfileScreen extends StatelessWidget {
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () {
-                      // ✅ Logout and go to login screen
                       Get.offNamed('/login');
                     },
                   ),

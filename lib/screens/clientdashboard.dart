@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/carscreen.dart';
+import 'package:flutter_application_1/screens/helpdeskscreen.dart';
+import 'package:flutter_application_1/screens/promotionscreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,10 +27,7 @@ class ClientDashboardScreen extends StatelessWidget {
   const ClientDashboardScreen({super.key});
 
   final List<Map<String, dynamic>> clientStats = const [
-    {"title": "My Bookings", "value": 3, "icon": Icons.book_online},
     {"title": "Available Cars", "value": 85, "icon": Icons.directions_car},
-    {"title": "Payment History", "value": "\$1,250", "icon": Icons.payment},
-    {"title": "Profile", "value": "John Doe", "icon": Icons.person},
     {"title": "Promotions", "value": "2 Active", "icon": Icons.local_offer},
     {"title": "Support", "value": "Help Desk", "icon": Icons.support_agent},
   ];
@@ -60,11 +59,26 @@ class ClientDashboardScreen extends StatelessWidget {
               value: stat["value"].toString(),
               icon: stat["icon"] as IconData,
               onTap: () {
-                // ✅ NAVIGATION LOGIC
+                // ✅ EXISTING (UNCHANGED)
                 if (stat["title"] == "Available Cars") {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => CarsScreen()),
+                  );
+                }
+
+                // ✅ NEW: Promotions Navigation
+                if (stat["title"] == "Promotions") {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PromotionScreen()),
+                  );
+                }
+                if (stat["title"] == "Support") {
+                  // Navigate to Help Desk Screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => HelpDeskScreen()),
                   );
                 }
               },
@@ -93,7 +107,7 @@ class DashboardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, // ✅ MAKES CARD CLICKABLE
+      onTap: onTap,
       child: Card(
         color: const Color(0xFF1C1C1E),
         elevation: 6,
