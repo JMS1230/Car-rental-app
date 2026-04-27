@@ -1,39 +1,104 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/carscreen.dart';
 import 'package:flutter_application_1/screens/helpdeskscreen.dart';
 import 'package:flutter_application_1/screens/promotionscreen.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Client Dashboard App',
-      theme: ThemeData(primarySwatch: Colors.red),
-      home: const ClientDashboardScreen(),
-    );
-  }
-}
-
-class ClientDashboardScreen extends StatelessWidget {
+class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({super.key});
 
-  final List<Map<String, dynamic>> clientStats = const [
-    {"title": "Available Cars", "value": 85, "icon": Icons.directions_car},
-    {"title": "Promotions", "value": "2 Active", "icon": Icons.local_offer},
-    {"title": "Support", "value": "Help Desk", "icon": Icons.support_agent},
-  ];
+  @override
+  State<ClientDashboardScreen> createState() => _ClientDashboardScreenState();
+}
+
+class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
+  int availableCars = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAvailableCarsCount();
+  }
+
+  Future<void> fetchAvailableCarsCount() async {
+    try {
+      final response = await http.get(
+        Uri.parse("http://192.168.0.103/flutterapi/get_cars2.php"),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 1) {
+          setState(() {
+            availableCars = (data['cars'] as List).length;
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Widget clientDashboard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: const Color(0xFF1C1C1E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.redAccent.withOpacity(0.4)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 40, color: Colors.redAccent),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Get user from arguments
+    final user = Get.arguments ?? {};
+
+    final List<Map<String, dynamic>> clientStats = [
+      {
+        "title": "Available Cars",
+        "value": availableCars.toString(),
+        "icon": Icons.directions_car,
+      },
+      {"title": "Promotions", "value": "2 Active", "icon": Icons.local_offer},
+      {"title": "Support", "value": "Help Desk", "icon": Icons.support_agent},
+    ];
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -53,92 +118,24 @@ class ClientDashboardScreen extends StatelessWidget {
           ),
           itemBuilder: (context, index) {
             final stat = clientStats[index];
-
-            return DashboardCard(
+            return clientDashboard(
               title: stat["title"].toString(),
               value: stat["value"].toString(),
               icon: stat["icon"] as IconData,
               onTap: () {
-                // ✅ EXISTING (UNCHANGED)
+                // ✅ Pass user forward
                 if (stat["title"] == "Available Cars") {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CarsScreen()),
-                  );
+                  Get.to(() => CarsScreen(), arguments: user);
                 }
-
-                // ✅ NEW: Promotions Navigation
                 if (stat["title"] == "Promotions") {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => PromotionScreen()),
-                  );
+                  Get.to(() => const PromotionScreen());
                 }
                 if (stat["title"] == "Support") {
-                  // Navigate to Help Desk Screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => HelpDeskScreen()),
-                  );
+                  Get.to(() => const HelpDeskScreen());
                 }
               },
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-class DashboardCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  const DashboardCard({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.icon,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        color: const Color(0xFF1C1C1E),
-        elevation: 6,
-        shadowColor: Colors.redAccent.withOpacity(0.4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: Colors.redAccent.withOpacity(0.4)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: Colors.redAccent),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: TextStyle(fontSize: 15, color: Colors.grey[400]),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter_application_1/screens/clientdashboard.dart';
 import 'package:flutter_application_1/screens/clientprofile.dart';
+import 'package:get/get.dart';
 
 class Clienthomescreen extends StatefulWidget {
   const Clienthomescreen({super.key});
@@ -15,17 +16,20 @@ class Clienthomescreen extends StatefulWidget {
 class _ClienthomescreenState extends State<Clienthomescreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomePage(),
-    ClientDashboardScreen(),
-    ClientProfileScreen(),
+  // ✅ Get user passed from login
+  final Map<String, dynamic> user = Get.arguments ?? {};
+
+  // ✅ Build screens lazily so user is available
+  late final List<Widget> _screens = [
+    const HomePage(),
+    const ClientDashboardScreen(),
+    ClientProfileScreen(user: user),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
@@ -34,10 +38,23 @@ class _ClienthomescreenState extends State<Clienthomescreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        // ✅ Show user name in appbar
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text(
+                user['fullname'] ?? '',
+                style: const TextStyle(
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
-
       body: _screens[_selectedIndex],
-
       bottomNavigationBar: CurvedNavigationBar(
         backgroundColor: Colors.black,
         color: Colors.redAccent,
@@ -75,9 +92,7 @@ class HomePage extends StatelessWidget {
             ),
           ),
         ),
-
         Container(color: Colors.black.withOpacity(0.6)),
-
         Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -91,9 +106,7 @@ class HomePage extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 25),
-
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
@@ -106,7 +119,7 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/login');
+                  Get.offAllNamed('/login');
                 },
                 child: const Text(
                   "Back to Login",

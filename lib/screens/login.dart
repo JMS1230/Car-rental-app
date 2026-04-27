@@ -13,61 +13,6 @@ class Logincontrollers extends GetxController {
   void togglePasswordVisibility() {
     isPasswordVisible.value = !isPasswordVisible.value;
   }
-
-  final String baseUrl = "http://10.0.2.2:3000";
-
-  Future<bool> login(String username, String password) async {
-    final trimmedUsername = username.trim();
-    final trimmedPassword = password.trim();
-
-    if (trimmedUsername.isEmpty || trimmedPassword.isEmpty) {
-      Get.snackbar(
-        "Error",
-        "Please fill in all fields",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return false;
-    }
-
-    isLoading.value = true;
-
-    try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/api/login"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "username": trimmedUsername,
-          "password": trimmedPassword,
-          "role": "client", // ✅ always client now
-        }),
-      );
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        Get.snackbar(
-          "Error",
-          data['message'] ?? "Invalid credentials",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        return false;
-      }
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Could not connect to server. Check your network.",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return false;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 }
 
 /// MAIN SCREEN
@@ -132,12 +77,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 30),
 
-                    /// USERNAME
+                    /// USERNAME / EMAIL
                     TextField(
                       controller: usernameController,
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
-                        hintText: "Username / Email",
+                        hintText: "Email",
                         hintStyle: const TextStyle(color: Colors.white70),
                         prefixIcon: const Icon(
                           Icons.person,
@@ -188,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 30),
 
-                    /// ✅ SINGLE LOGIN BUTTON (CLIENT)
+                    /// LOGIN BUTTON
                     Obx(
                       () => ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -198,13 +143,64 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: loginController.isLoading.value
                             ? null
                             : () async {
-                                bool success = await loginController.login(
-                                  usernameController.text,
-                                  passwordController.text,
-                                );
-
-                                if (success) {
-                                  Get.toNamed('/clienthome');
+                                if (usernameController.text.isEmpty) {
+                                  Get.snackbar(
+                                    "Error",
+                                    "Enter email",
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                                } else if (passwordController.text.isEmpty) {
+                                  Get.snackbar(
+                                    "Error",
+                                    "Enter password",
+                                    backgroundColor: Colors.red,
+                                    colorText: Colors.white,
+                                  );
+                                } else {
+                                  loginController.isLoading.value = true;
+                                  try {
+                                    final response = await http.get(
+                                      Uri.parse(
+                                        "http://192.168.0.103/flutterapi/login.php?email=${usernameController.text}&password=${passwordController.text}",
+                                      ),
+                                    );
+                                    if (response.statusCode == 200) {
+                                      final serverData = jsonDecode(
+                                        response.body,
+                                      );
+                                      if (serverData['code'] == 1) {
+                                        // ✅ Pass user details to dashboard
+                                        Get.offAllNamed(
+                                          '/client-home',
+                                          arguments: serverData['userdetails'],
+                                        );
+                                      } else {
+                                        Get.snackbar(
+                                          "Wrong Details",
+                                          serverData["message"],
+                                          backgroundColor: Colors.red,
+                                          colorText: Colors.white,
+                                        );
+                                      }
+                                    } else {
+                                      Get.snackbar(
+                                        "Server error",
+                                        "Login failed",
+                                        backgroundColor: Colors.red,
+                                        colorText: Colors.white,
+                                      );
+                                    }
+                                  } catch (e) {
+                                    Get.snackbar(
+                                      "Error",
+                                      "Server connection failed: $e",
+                                      backgroundColor: Colors.red,
+                                      colorText: Colors.white,
+                                    );
+                                  } finally {
+                                    loginController.isLoading.value = false;
+                                  }
                                 }
                               },
                         child: loginController.isLoading.value
@@ -217,31 +213,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     const SizedBox(height: 20),
 
-                    /// SIGNUP
+                    /// SIGNUP LINK
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Row(
-                          children: [
-                            const Text(
-                              "No account? ",
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                            GestureDetector(
-                              onTap: () => Get.toNamed('/signup'),
-                              child: const Text(
-                                "Sign up",
-                                style: TextStyle(
-                                  color: Colors.redAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                         const Text(
-                          "Forgot Password?",
-                          style: TextStyle(color: Colors.redAccent),
+                          "No account? ",
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                        GestureDetector(
+                          onTap: () => Get.toNamed('/signup'),
+                          child: const Text(
+                            "Sign up",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ],
                     ),

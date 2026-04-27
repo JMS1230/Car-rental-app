@@ -14,16 +14,6 @@ class HelpDeskScreen extends StatelessWidget {
       "subtitle": "support@carrental.com",
       "icon": Icons.email,
     },
-    {
-      "title": "Live Chat",
-      "subtitle": "Chat with our agent",
-      "icon": Icons.chat,
-    },
-    {
-      "title": "FAQs",
-      "subtitle": "Common questions & answers",
-      "icon": Icons.help_outline,
-    },
   ];
 
   @override
@@ -69,7 +59,6 @@ class HelpDeskScreen extends StatelessWidget {
                 color: Colors.white,
               ),
               onTap: () {
-                // ✅ ACTIONS (simple feedback for now)
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text("${item["title"]} clicked")),
                 );

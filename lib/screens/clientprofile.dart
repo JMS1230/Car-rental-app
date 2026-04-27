@@ -2,22 +2,20 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/changepasswordscreen.dart';
-import 'package:flutter_application_1/screens/driverlicensescreen.dart';
-import 'package:flutter_application_1/screens/mybookingsscreen.dart';
-import 'package:flutter_application_1/screens/paymenthistoryscreen.dart';
 import 'package:get/get.dart';
 
 class ClientProfileScreen extends StatelessWidget {
-  final String clientName = "Bruce Wayne";
-  final String email = "bruce.wayne@gothamcity.com";
-  final String phone = "+254 711 987 654";
-  final String membership = "Premium Client";
-  final String profileImage = "https://via.placeholder.com/150";
+  final Map<String, dynamic> user;
 
-  const ClientProfileScreen({super.key});
+  const ClientProfileScreen({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
+    final String clientName = user['fullname'] ?? 'Unknown';
+    final String email = user['email'] ?? 'No email';
+    final String phone = user['phone'] ?? 'No phone';
+    final String membership = "Premium Client";
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -30,15 +28,21 @@ class ClientProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Profile Picture
             CircleAvatar(
               radius: 60,
-              backgroundImage: NetworkImage(profileImage),
+              backgroundColor: Colors.redAccent,
+              child: Text(
+                clientName.isNotEmpty ? clientName[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  fontSize: 40,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
 
             const SizedBox(height: 16),
 
-            // Name
             Text(
               clientName,
               style: const TextStyle(
@@ -50,7 +54,6 @@ class ClientProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Email, Phone, Membership
             Text(email, style: TextStyle(color: Colors.grey[400])),
             Text(phone, style: TextStyle(color: Colors.grey[400])),
             Text(
@@ -60,7 +63,6 @@ class ClientProfileScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Profile Actions
             Card(
               color: const Color(0xFF1C1C1E),
               elevation: 6,
@@ -80,53 +82,7 @@ class ClientProfileScreen extends StatelessWidget {
                       "My Bookings",
                       style: TextStyle(color: Colors.white),
                     ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MyBookingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  Divider(color: Colors.grey[800]),
-
-                  ListTile(
-                    leading: const Icon(Icons.badge, color: Colors.redAccent),
-                    title: const Text(
-                      "Driver Licence",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DriverLicenceScreen(),
-                        ),
-                      );
-                    },
-                  ),
-
-                  Divider(color: Colors.grey[800]),
-
-                  // ✅ NEW PAYMENT CARD
-                  ListTile(
-                    leading: const Icon(Icons.payment, color: Colors.redAccent),
-                    title: const Text(
-                      "Payment",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PaymentHistoryScreen(),
-                        ),
-                      );
-                      // Navigate to payment history or payment screen
-                      // Navigator.push(...);
-                    },
+                    onTap: () => Get.toNamed('/bookings', arguments: user),
                   ),
 
                   Divider(color: Colors.grey[800]),
@@ -137,14 +93,8 @@ class ClientProfileScreen extends StatelessWidget {
                       "Change Password",
                       style: TextStyle(color: Colors.white),
                     ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ChangePasswordScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () =>
+                        Get.to(const ChangePasswordScreen(), arguments: user),
                   ),
 
                   Divider(color: Colors.grey[800]),
@@ -155,9 +105,7 @@ class ClientProfileScreen extends StatelessWidget {
                       "Logout",
                       style: TextStyle(color: Colors.white),
                     ),
-                    onTap: () {
-                      Get.offNamed('/login');
-                    },
+                    onTap: () => Get.offAllNamed('/login'),
                   ),
                 ],
               ),

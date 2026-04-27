@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -22,28 +24,90 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool obscureNew = true;
   bool obscureConfirm = true;
 
-  void changePassword() {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        isLoading = true;
-      });
+  // ✅ Get user passed from previous screen
+  late Map<String, dynamic> user; // ✅ FIXED
 
-      // TODO: Connect to backend API here
+  @override
+  void initState() {
+    super.initState();
 
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() {
-          isLoading = false;
-        });
+    // ✅ SAFE USER RECEIVING
+    user = Get.arguments ?? {};
 
+    if (user.isEmpty || user['id'] == null) {
+      Future.delayed(Duration.zero, () {
         Get.snackbar(
-          "Success",
-          "Password changed successfully",
-          backgroundColor: Colors.green,
+          "Error",
+          "User not found. Please login again.",
+          backgroundColor: Colors.red,
           colorText: Colors.white,
         );
-
-        Get.back();
+        Get.offAllNamed('/login');
       });
+    }
+  }
+
+  Future<void> changePassword() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // ✅ Guard: ensure user is logged in
+    if (user['id'] == null) {
+      Get.snackbar(
+        "Error",
+        "User not logged in. Please log in again.",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+          "http://192.168.0.103/flutterapi/change_password.php"
+          "?user_id=${user['id']}"
+          "&current_password=${Uri.encodeComponent(currentPasswordController.text)}"
+          "&new_password=${Uri.encodeComponent(newPasswordController.text)}",
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['code'] == 1) {
+          Get.snackbar(
+            "Success",
+            "Password changed successfully",
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+          Get.back();
+        } else {
+          Get.snackbar(
+            "Error",
+            data['message'] ?? "Failed to change password",
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+          );
+        }
+      } else {
+        Get.snackbar(
+          "Server Error",
+          "Please try again",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Connection failed: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -162,6 +226,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                 ),
                 validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please confirm your password";
+                  }
                   if (value != newPasswordController.text) {
                     return "Passwords do not match";
                   }
