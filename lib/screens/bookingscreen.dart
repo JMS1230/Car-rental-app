@@ -1,12 +1,14 @@
 // ignore_for_file: deprecated_member_use
+// ↑ This disables Flutter warnings about deprecated APIs (not recommended long-term, but used for now)
 
-import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
+import 'dart:convert'; // Used to convert JSON responses into Dart objects
+import 'package:flutter/material.dart'; // Flutter UI framework
+import 'package:get/get.dart'; // State management + navigation (GetX)
+import 'package:http/http.dart'
+    as http; // For making HTTP requests to backend API
 
 class BookingScreen extends StatefulWidget {
-  final Map<String, dynamic> car;
+  final Map<String, dynamic> car; // Car details passed from previous screen
 
   const BookingScreen({super.key, required this.car});
 
@@ -15,24 +17,35 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
+  // Selected booking start date
   DateTime? startDate;
+
+  // Selected booking end date
   DateTime? endDate;
+
+  // Controls loading state (shows spinner while booking is processing)
   bool isLoading = false;
 
-  final Map<String, dynamic> user = Get.arguments ?? {};
+  // ✅ Retrieve user data passed from CarDetailsScreen via Get.arguments
+  late final Map<String, dynamic> user = Map<String, dynamic>.from(
+    Get.arguments ?? {},
+  );
 
+  /// FUNCTION: Opens date picker for selecting start or end date
   Future<void> pickDate(bool isStart) async {
+    // Show calendar date picker dialog
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2030),
+      initialDate: DateTime.now(), // default selected date
+      firstDate: DateTime.now(), // cannot pick past dates
+      lastDate: DateTime(2030), // max allowed date
+      // Custom dark theme for date picker
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Colors.redAccent,
-              surface: Color(0xFF1C1C1E),
+              primary: Colors.redAccent, // selected date color
+              surface: Color(0xFF1C1C1E), // background color
             ),
           ),
           child: child!,
@@ -40,33 +53,41 @@ class _BookingScreenState extends State<BookingScreen> {
       },
     );
 
+    // If user selected a date
     if (picked != null) {
       setState(() {
+        // If selecting start date
         if (isStart) {
           startDate = picked;
+
+          // If end date is before new start date → reset it
           if (endDate != null && endDate!.isBefore(startDate!)) {
             endDate = null;
           }
         } else {
+          // If selecting end date
           endDate = picked;
         }
       });
     }
   }
 
+  /// Calculates number of booking days
   int get totalDays {
     if (startDate == null || endDate == null) return 0;
     return endDate!.difference(startDate!).inDays;
   }
 
+  /// Calculates total booking price
   double get totalPrice {
     final pricePerDay =
         double.tryParse(widget.car['price_day']?.toString() ?? '0') ?? 0;
     return totalDays * pricePerDay;
   }
 
+  /// FUNCTION: Sends booking request to backend API
   Future<void> confirmBooking() async {
-    // ✅ Guard: ensure user is logged in
+    // ❗ Check if user is logged in
     if (user['id'] == null) {
       Get.snackbar(
         "Error",
@@ -77,6 +98,7 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // ❗ Validate date selection
     if (startDate == null || endDate == null) {
       Get.snackbar(
         "Error",
@@ -87,6 +109,7 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // ❗ Ensure valid date range
     if (totalDays <= 0) {
       Get.snackbar(
         "Error",
@@ -97,13 +120,14 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // Show loading spinner
     setState(() => isLoading = true);
 
     try {
-      // ✅ Fixed: removed space in URL
+      // Send GET request to PHP backend
       final response = await http.get(
         Uri.parse(
-          "http://192.168.0.103/flutterapi/create_booking.php"
+          "http://10.61.228.97/flutterapi/create_booking.php"
           "?user_id=${user['id']}"
           "&car_id=${widget.car['id']}"
           "&start_date=${startDate.toString().split(' ')[0]}"
@@ -112,17 +136,23 @@ class _BookingScreenState extends State<BookingScreen> {
         ),
       );
 
+      // If request is successful
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+        // If backend returns success
         if (data['code'] == 1) {
-          Get.offAllNamed('/client-home', arguments: user);
           Get.snackbar(
             "Success",
             "Booking confirmed!",
             backgroundColor: Colors.green,
             colorText: Colors.white,
           );
+
+          // Navigate back to home and pass user data
+          Get.offAllNamed('/client-home', arguments: user);
         } else {
+          // Backend returned error message
           Get.snackbar(
             "Error",
             data['message'] ?? "Booking failed",
@@ -131,6 +161,7 @@ class _BookingScreenState extends State<BookingScreen> {
           );
         }
       } else {
+        // Server error
         Get.snackbar(
           "Server Error",
           "Please try again",
@@ -139,6 +170,7 @@ class _BookingScreenState extends State<BookingScreen> {
         );
       }
     } catch (e) {
+      // Network / connection error
       Get.snackbar(
         "Error",
         "Connection failed: $e",
@@ -146,10 +178,12 @@ class _BookingScreenState extends State<BookingScreen> {
         colorText: Colors.white,
       );
     } finally {
+      // Stop loading spinner
       setState(() => isLoading = false);
     }
   }
 
+  /// UI helper widget for showing summary rows
   Widget _summaryRow(String label, String value, {bool highlight = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -168,21 +202,26 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Combine brand + model into full car name
     final String carName =
         "${widget.car['brand'] ?? ''} ${widget.car['model'] ?? ''}".trim();
 
     return Scaffold(
       backgroundColor: Colors.black,
+
+      // App bar showing selected car name
       appBar: AppBar(
         title: Text("Book $carName"),
         centerTitle: true,
         backgroundColor: Colors.black,
         elevation: 0,
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Car name display
             Text(
               carName,
               style: const TextStyle(
@@ -194,6 +233,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const SizedBox(height: 6),
 
+            // Price per day display
             Text(
               "Ksh ${widget.car['price_day']}/day",
               style: TextStyle(color: Colors.grey[400], fontSize: 15),
@@ -201,7 +241,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const SizedBox(height: 24),
 
-            // Start Date
+            // Start date selector card
             Card(
               color: const Color(0xFF1C1C1E),
               shape: RoundedRectangleBorder(
@@ -229,7 +269,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const SizedBox(height: 10),
 
-            // End Date
+            // End date selector card
             Card(
               color: const Color(0xFF1C1C1E),
               shape: RoundedRectangleBorder(
@@ -257,7 +297,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const SizedBox(height: 20),
 
-            // Price Summary
+            // Price summary section (only shows when dates are selected)
             if (totalDays > 0)
               Card(
                 color: const Color(0xFF1C1C1E),
@@ -278,7 +318,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       const Divider(color: Colors.grey),
                       _summaryRow(
                         "Total Price",
-                        "Ksh $totalPrice",
+                        "Ksh ${totalPrice.toStringAsFixed(0)}",
                         highlight: true,
                       ),
                     ],
@@ -288,7 +328,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const Spacer(),
 
-            // Confirm Button
+            // Confirm booking button
             SizedBox(
               width: double.infinity,
               height: 50,
